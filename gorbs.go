@@ -19,7 +19,7 @@ var configPath = flag.String("config", "/etc/gorbs.conf", "Specify alternate con
 var flagVerbose = flag.Bool("verbose", false, "Show equivalent shell commands being executed.")
 var flagTest = flag.Bool("test", false, "Show verbose output, but don't touch anything. This will be similar, but not always exactly the same as the real output from a live run.")
 var flagQuiet = flag.Bool("quiet", false, "Suppress non-fatal warnings.")
-var flagVVerbose = flag.Bool("vverbose", false, "The same as -v, but with more detail.")
+var flagVVerbose = flag.Bool("extra-verbose", false, "The same as -v, but with more detail.")
 var flagDebug = flag.Bool("debug", false, "A firehose of diagnostic information.")
 
 var conf *config.Configuration
@@ -37,7 +37,7 @@ func loadConfiguration() {
 	}
 }
 
-func init() {
+func setup() {
 	flag.Parse()
 
 	var verbose log.Level
@@ -45,9 +45,9 @@ func init() {
 	case *flagDebug:
 		verbose = log.DEBUG
 	case *flagVVerbose:
-		verbose = log.WARN
-	case *flagVerbose:
 		verbose = log.INFO
+	case *flagVerbose:
+		verbose = log.WARN
 	case *flagQuiet:
 		verbose = log.ALERT
 	default:
@@ -60,7 +60,7 @@ func init() {
 	log.AddBackend("std", backend)
 
 	// Load the configuration file
-	conf = config.New()
+	conf = config.New(verbose)
 	loadConfiguration()
 
 	// Enforce command-line verbosity over configuration
@@ -91,10 +91,6 @@ func setupLogging() {
 }
 
 func foo() {
-	defer func() {
-		_ = recover()
-	}()
-
 	log.Debug("This is debug!")
 	log.Info("This is an info")
 	log.Warn("This is a warning!")
@@ -103,6 +99,16 @@ func foo() {
 }
 
 func main() {
+	// Catch-all to avoid dumping the stack on panic
+	defer func() {
+		if conf.Verbose < log.DEBUG {
+			err := recover()
+			if err != nil {
+				os.Exit(1)
+			}
+		}
+	}()
+
+	setup()
 	foo()
-	log.Fatal("Now we are dead!")
 }

@@ -33,7 +33,7 @@ type Configuration struct {
 	Backups          []Backup
 }
 
-func New() *Configuration {
+func New(Loglevel log.Level) *Configuration {
 	return &Configuration{
 		No_create_root:   false,
 		Cmd_cp:           "/bin/cp",
@@ -41,7 +41,7 @@ func New() *Configuration {
 		Cmd_rsync:        "/usr/bin/rsync",
 		Cmd_ssh:          "/usr/bin/ssh",
 		Intervals:        make([]Interval, 0),
-		Verbose:          2,
+		Verbose:          Loglevel,
 		Test:             false,
 		Loglevel:         3,
 		Lockfile:         "/var/run/rsnapshot.pid",

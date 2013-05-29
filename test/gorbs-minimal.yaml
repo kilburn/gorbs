@@ -1,0 +1,31 @@
+snapshot_root: /.snapshots/{{ inventory_hostname }}
+no_create_root: 1
+cmd_cp: /bin/cp
+cmd_rm: /bin/rm
+cmd_rsync: /usr/bin/rsync
+cmd_ssh: /usr/bin/ssh
+
+intervals:
+  - name: hourly
+    keep: 3
+  - name: daily
+    keep: 7
+  - name: weekly
+    keep: 4
+  - name: monthly
+    keep: 3
+
+verbose: 2
+loglevel: 3
+logfile: /var/log/rsnapshot.log
+lockfile: /var/run/rsnapshot.pid
+rsync_short_args: -a
+rsync_long_args: "--delete --numeric-ids --relative --delete-excluded --rsync-path=rsync_sudo.sh"
+ssh_args: "-p 22"
+exclude_file:  /etc/rsnapshot/{{ inventory_hostname }}/excludes
+
+backups:
+  - src:  rbackup@{{ inventory_hostname }}:/home/
+    dest: ./
+  - command: /usr/local/sbin/backup_mysql /etc/rsnapshot/{{ inventory_hostname }}/mysql
+    dest: mysql/

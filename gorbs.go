@@ -12,7 +12,7 @@ import (
 
 	"launchpad.net/goyaml"
 
-	//"github.com/nightlyone/lockfile"
+	"github.com/nightlyone/lockfile"
 )
 
 var configPath = flag.String("config", "/etc/gorbs.conf", "Specify alternate config file (-c /path/to/file)")
@@ -98,6 +98,28 @@ func foo() {
 	log.Panic("This is a panic!")
 }
 
+func acquireLock() lockfile.Lockfile {
+	lock, err := lockfile.New(conf.Lockfile)
+	if err == lockfile.ErrNeedAbsPath {
+		log.Panicf(
+			`Error: you must specify an absolute path for the lockfile.
+	("%s" is not an absolute path)`, conf.Lockfile)
+	}
+	if err != nil {
+		log.Panicf("Something wrong happened (%v)", err)
+	}
+
+	err = lock.TryLock()
+	if err == lockfile.ErrBusy {
+		log.Panicf("Another instance of gorbs is already running. Aborting.")
+	}
+	if err != nil {
+		log.Panicf("Unable to acquire the lockfile (%v). Aborting.", err)
+	}
+
+	return lock
+}
+
 func main() {
 	// Catch-all to avoid dumping the stack on panic
 	defer func() {
@@ -110,5 +132,8 @@ func main() {
 	}()
 
 	setup()
-	foo()
+
+	lock := acquireLock()
+	defer lock.Unlock()
+
 }
